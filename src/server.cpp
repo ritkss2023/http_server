@@ -61,11 +61,22 @@ namespace {
     constexpr std::string_view kHttpLineTerminator{"\r\n"};
 
     constexpr std::string_view kHttpGetMethod{"GET"};
-    constexpr std::string_view kHttpRootPath{"/"};
     constexpr std::string_view kHttpVersion{"HTTP/1.1"};
+
+    constexpr std::string_view kHttpRootPath{"/"};
+    constexpr std::string_view kHttpEchoPath{"/echo/"};
 
     constexpr std::string_view kOkEmptyResponse{"HTTP/1.1 200 OK\r\n\r\n"};
     constexpr std::string_view kNotFoundEmptyResponse{"HTTP/1.1 404 Not Found\r\n\r\n"};
+
+    std::string CreateHttpResponse(std::string_view str) {
+        return
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/plain\r\n"
+            "Content-Length: " + std::to_string(str.size()) + "\r\n"
+            "\r\n"
+            + std::string(str);
+    }
 
     bool IsWs(char ch) noexcept {
         return static_cast<bool>(isspace(ch));
@@ -163,7 +174,10 @@ int main(int argc, char **argv) {
     }
 
     const std::string_view request_path = ParseHttpGetRequestStartline(http_request_start_line);
-    if (request_path == kHttpRootPath) {
+    if (request_path.starts_with(kHttpEchoPath)) {
+        const std::string response{CreateHttpResponse(request_path.substr(kHttpEchoPath.size()))};
+        write(client_fd.Get(), response.data(), response.size());
+    } else if (request_path == kHttpRootPath) {
         write(client_fd.Get(), kOkEmptyResponse.data(), kOkEmptyResponse.size());
     } else {
         write(client_fd.Get(), kNotFoundEmptyResponse.data(), kNotFoundEmptyResponse.size());
