@@ -1,9 +1,14 @@
 #ifndef HTTP_SERVER_STARTER_CPP_FILE_DESCRIPTOR_H
 #define HTTP_SERVER_STARTER_CPP_FILE_DESCRIPTOR_H
 
+#include <stdexcept>
 #include <utility>
 
 #include <unistd.h>
+
+struct FileDescriptorException : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
 
 class FileDescriptor {
     int fd_{-1};
@@ -34,15 +39,17 @@ public:
     FileDescriptor(const FileDescriptor&) = delete;
     FileDescriptor& operator=(const FileDescriptor&) = delete;
 
+    void SetNonBlocking(bool non_blocking);
+
     void Close() noexcept {
-        if (fd_ != -1) {
+        if (!IsEmpty()) {
             close(fd_);
             fd_ = -1;
         }
     }
 
-    int Get() { return fd_; }
-
+    int Get() noexcept { return fd_; }
+    bool IsEmpty() const noexcept { return fd_ == -1; }
 };
 
 #endif //HTTP_SERVER_STARTER_CPP_FILE_DESCRIPTOR_H

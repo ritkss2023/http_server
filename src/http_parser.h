@@ -20,8 +20,8 @@ class HttpParser {
     HttpRequest request_;
 
 public:
+    HttpParserState GetState() const noexcept { return state_; }
     HttpParserState Parse(std::string& buffer);
-
     HttpRequest GetRequest();
 
 private:

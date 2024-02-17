@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <charconv>
 
+#include <cerrno>
+#include <cstring>
+
 void SkipWs(std::string_view& str) noexcept {
     while (!str.empty() && IsWs(str.front())) {
         str.remove_prefix(1);
@@ -35,3 +38,11 @@ std::optional<size_t> TryParseSizeT(std::string_view str) noexcept {
     return std::nullopt;
 }
 
+std::string StrError(std::string_view str) {
+    using namespace std::string_literals;
+    std::string result;
+    result += str;
+    result += ": ";
+    result += strerror(errno);
+    return result;
+}
