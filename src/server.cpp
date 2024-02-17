@@ -5,6 +5,8 @@
 #include "utils.h"
 
 #include <array>
+#include <fstream>
+#include <iterator>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -21,9 +23,17 @@
 
 namespace {
 constexpr std::string_view kHttpEchoPath{"/echo/"};
+constexpr std::string_view kHttpFilesPath{"/files/"};
 constexpr std::string_view kUserAgentPath{"/user-agent"};
 constexpr std::string_view kHttpRootPath{"/"};
 }
+
+
+HttpServer::HttpServer(std::filesystem::directory_entry directory)
+    : directory_{std::move(directory)}
+{
+}
+
 
 void HttpServer::Run(const std::variant<std::string, uint32_t>& ipv4_address, std::uint16_t port) {
     CreateEPoll();
@@ -208,6 +218,24 @@ HttpResponse HttpServer::HandleRequest(const HttpRequest& request) {
             .response_status = k200Ok,
             .headers = {{std::string{kHttpContentTypeHeader}, "text/plain"}},
             .body = request.path.substr(kHttpEchoPath.size())
+        };
+    } else if (request.method == kGet && request.path.starts_with(kHttpFilesPath)) {
+        if (!directory_.exists()) {
+            return HttpResponse {.response_status = k404NotFound};
+        }
+        const std::string_view file{std::string_view{request.path}.substr(kHttpFilesPath.size())};
+        const std::filesystem::path file_path{directory_.path() / file};
+        if (!std::filesystem::is_regular_file(file_path)) {
+            return HttpResponse {.response_status = k404NotFound};
+        }
+        std::fstream fs{file_path, std::ios_base::in | std::ios_base::binary};
+        if (!fs) {
+            return HttpResponse {.response_status = k404NotFound};
+        }
+        return HttpResponse {
+            .response_status = k200Ok,
+            .headers = {{std::string{kHttpContentTypeHeader}, "application/octet-stream"}},
+            .body = std::string{std::istreambuf_iterator<char>{fs}, std::istreambuf_iterator<char>{}}
         };
     } else if (request.method == kGet && request.path == kUserAgentPath) {
         auto user_agent_header_it{request.headers.find("User-Agent")};

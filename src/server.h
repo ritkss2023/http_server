@@ -5,6 +5,7 @@
 #include "http.h"
 #include "http_parser.h"
 
+#include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <variant>
@@ -23,11 +24,14 @@ class HttpServer {
         std::string buffer;
     };
 
+    std::filesystem::directory_entry directory_;
     FileDescriptor epoll_fd_;
     FileDescriptor listening_socket_;
     std::unordered_map<int, ConnectionState> connections_;
 
 public:
+    HttpServer(std::filesystem::directory_entry directory);
+
     void Run(const std::variant<std::string, uint32_t>& ipv4_address, std::uint16_t port);
 
 private:
