@@ -6,7 +6,7 @@
 
 enum class HttpMethod {
     kGet,
-    //kPost,
+    kPost,
 };
 
 struct HttpRequest {
@@ -18,8 +18,10 @@ struct HttpRequest {
 
 enum class HttpResponseStatus {
     k200Ok = 200,
+    k201Created = 201,
     k400BadRequest = 400,
     k404NotFound = 404,
+    k422UnprocessableContent = 422,
 };
 
 struct HttpResponse {

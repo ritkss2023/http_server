@@ -15,6 +15,8 @@ constexpr std::optional<HttpMethod> ToHttpMethod(std::string_view method) noexce
     using enum HttpMethod;
     if (method == "GET") {
         return kGet;
+    } else if (method == "POST") {
+        return kPost;
     }
     return std::nullopt;
 }

@@ -220,15 +220,15 @@ HttpResponse HttpServer::HandleRequest(const HttpRequest& request) {
             .body = request.path.substr(kHttpEchoPath.size())
         };
     } else if (request.method == kGet && request.path.starts_with(kHttpFilesPath)) {
-        if (!directory_.exists()) {
+        const std::string_view file{std::string_view{request.path}.substr(kHttpFilesPath.size())};
+        if (file.empty() || !directory_.exists()) {
             return HttpResponse {.response_status = k404NotFound};
         }
-        const std::string_view file{std::string_view{request.path}.substr(kHttpFilesPath.size())};
         const std::filesystem::path file_path{directory_.path() / file};
         if (!std::filesystem::is_regular_file(file_path)) {
             return HttpResponse {.response_status = k404NotFound};
         }
-        std::fstream fs{file_path, std::ios_base::in | std::ios_base::binary};
+        std::ifstream fs{file_path, std::ios_base::binary};
         if (!fs) {
             return HttpResponse {.response_status = k404NotFound};
         }
@@ -237,6 +237,18 @@ HttpResponse HttpServer::HandleRequest(const HttpRequest& request) {
             .headers = {{std::string{kHttpContentTypeHeader}, "application/octet-stream"}},
             .body = std::string{std::istreambuf_iterator<char>{fs}, std::istreambuf_iterator<char>{}}
         };
+    } else if (request.method == kPost && request.path.starts_with(kHttpFilesPath)) {
+        const std::string_view file{std::string_view{request.path}.substr(kHttpFilesPath.size())};
+        if (file.empty() || !directory_.exists()) {
+            return HttpResponse {.response_status = k404NotFound};
+        }
+        const std::filesystem::path file_path{directory_.path() / file};
+        std::ofstream fs{file_path, std::ios_base::binary};
+        if (!fs) {
+            return HttpResponse{.response_status = k422UnprocessableContent};
+        }
+        fs.write(request.body.data(), request.body.size());
+        return HttpResponse{.response_status = k201Created};
     } else if (request.method == kGet && request.path == kUserAgentPath) {
         auto user_agent_header_it{request.headers.find("User-Agent")};
         if (user_agent_header_it != request.headers.end()) {
