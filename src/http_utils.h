@@ -1,5 +1,5 @@
-#ifndef HTTP_SERVER_STARTER_CPP_HTTP_UTILS_H
-#define HTTP_SERVER_STARTER_CPP_HTTP_UTILS_H
+#ifndef HTTP_SERVER_HTTP_UTILS_H
+#define HTTP_SERVER_HTTP_UTILS_H
 
 #include "http.h"
 
@@ -21,4 +21,4 @@ constexpr std::optional<HttpMethod> ToHttpMethod(std::string_view method) noexce
     return std::nullopt;
 }
 
-#endif //HTTP_SERVER_STARTER_CPP_HTTP_UTILS_H
+#endif //HTTP_SERVER_HTTP_UTILS_H

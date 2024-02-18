@@ -1,8 +1,18 @@
-#ifndef HTTP_SERVER_STARTER_CPP_UTILS_H
-#define HTTP_SERVER_STARTER_CPP_UTILS_H
+#ifndef HTTP_SERVER_UTILS_H
+#define HTTP_SERVER_UTILS_H
+
+#include <memory>
+#include <utility>
 
 // helper type for the std::variant visitor
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
 
-#endif //HTTP_SERVER_STARTER_CPP_UTILS_H
+struct ToAddress {
+    template <typename Ptr>
+    constexpr decltype(auto) operator()(Ptr&& ptr) const noexcept {
+        return std::to_address(std::forward<Ptr>(ptr));
+    }
+};
+
+#endif //HTTP_SERVER_UTILS_H

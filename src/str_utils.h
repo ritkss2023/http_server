@@ -1,5 +1,5 @@
-#ifndef HTTP_SERVER_STARTER_CPP_STR_UTILS_H
-#define HTTP_SERVER_STARTER_CPP_STR_UTILS_H
+#ifndef HTTP_SERVER_STR_UTILS_H
+#define HTTP_SERVER_STR_UTILS_H
 
 #include <optional>
 #include <string>
@@ -21,4 +21,4 @@ std::optional<size_t> TryParseSizeT(std::string_view str) noexcept;
 
 std::string StrError(std::string_view str);
 
-#endif //HTTP_SERVER_STARTER_CPP_STR_UTILS_H
+#endif //HTTP_SERVER_STR_UTILS_H

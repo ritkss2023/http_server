@@ -1,15 +1,14 @@
 #include "server.h"
 
-#include "http_utils.h"
 #include "str_utils.h"
 #include "utils.h"
 
+#include <algorithm>
 #include <array>
-#include <fstream>
-#include <iterator>
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <cerrno>
 #include <cstddef>
@@ -21,19 +20,11 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
-namespace {
-constexpr std::string_view kHttpEchoPath{"/echo/"};
-constexpr std::string_view kHttpFilesPath{"/files/"};
-constexpr std::string_view kUserAgentPath{"/user-agent"};
-constexpr std::string_view kHttpRootPath{"/"};
+void HttpServer::AddHandler(std::unique_ptr<HttpHandlerBase> handler) {
+    if (handler) {
+        handlers_.push_back(std::move(handler));
+    }
 }
-
-
-HttpServer::HttpServer(std::filesystem::directory_entry directory)
-    : directory_{std::move(directory)}
-{
-}
-
 
 void HttpServer::Run(const std::variant<std::string, uint32_t>& ipv4_address, std::uint16_t port) {
     CreateEPoll();
@@ -210,56 +201,9 @@ void HttpServer::ProcessConnection(int socket_fd) {
 }
 
 HttpResponse HttpServer::HandleRequest(const HttpRequest& request) {
-    using enum HttpMethod;
-    using enum HttpResponseStatus;
-
-    if (request.method == kGet && request.path.starts_with(kHttpEchoPath)) {
-        return HttpResponse{
-            .response_status = k200Ok,
-            .headers = {{std::string{kHttpContentTypeHeader}, "text/plain"}},
-            .body = request.path.substr(kHttpEchoPath.size())
-        };
-    } else if (request.method == kGet && request.path.starts_with(kHttpFilesPath)) {
-        const std::string_view file{std::string_view{request.path}.substr(kHttpFilesPath.size())};
-        if (file.empty() || !directory_.exists()) {
-            return HttpResponse {.response_status = k404NotFound};
-        }
-        const std::filesystem::path file_path{directory_.path() / file};
-        if (!std::filesystem::is_regular_file(file_path)) {
-            return HttpResponse {.response_status = k404NotFound};
-        }
-        std::ifstream fs{file_path, std::ios_base::binary};
-        if (!fs) {
-            return HttpResponse {.response_status = k404NotFound};
-        }
-        return HttpResponse {
-            .response_status = k200Ok,
-            .headers = {{std::string{kHttpContentTypeHeader}, "application/octet-stream"}},
-            .body = std::string{std::istreambuf_iterator<char>{fs}, std::istreambuf_iterator<char>{}}
-        };
-    } else if (request.method == kPost && request.path.starts_with(kHttpFilesPath)) {
-        const std::string_view file{std::string_view{request.path}.substr(kHttpFilesPath.size())};
-        if (file.empty() || !directory_.exists()) {
-            return HttpResponse {.response_status = k404NotFound};
-        }
-        const std::filesystem::path file_path{directory_.path() / file};
-        std::ofstream fs{file_path, std::ios_base::binary};
-        if (!fs) {
-            return HttpResponse{.response_status = k422UnprocessableContent};
-        }
-        fs.write(request.body.data(), request.body.size());
-        return HttpResponse{.response_status = k201Created};
-    } else if (request.method == kGet && request.path == kUserAgentPath) {
-        auto user_agent_header_it{request.headers.find("User-Agent")};
-        if (user_agent_header_it != request.headers.end()) {
-            return HttpResponse{
-                .response_status = k200Ok,
-                .headers = {{std::string{kHttpContentTypeHeader}, "text/plain"}},
-                .body = user_agent_header_it->second
-            };
-        }
-    } else if (request.method == kGet && request.path == kHttpRootPath) {
-        return HttpResponse{.response_status = HttpResponseStatus::k200Ok};
-    }
-    return HttpResponse{.response_status = k404NotFound};
+    auto handler_it = std::ranges::find_if(handlers_,
+        [&request](HttpHandlerBase* handler) { return handler->IsMyRequest(request); }, ToAddress{});
+    return handler_it != handlers_.end()
+        ? (**handler_it).HandleRequest(request)
+        : HttpResponse{.response_status = HttpResponseStatus::k404NotFound};
 }

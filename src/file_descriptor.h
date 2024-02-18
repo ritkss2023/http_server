@@ -1,5 +1,5 @@
-#ifndef HTTP_SERVER_STARTER_CPP_FILE_DESCRIPTOR_H
-#define HTTP_SERVER_STARTER_CPP_FILE_DESCRIPTOR_H
+#ifndef HTTP_SERVER_FILE_DESCRIPTOR_H
+#define HTTP_SERVER_FILE_DESCRIPTOR_H
 
 #include <stdexcept>
 #include <utility>
@@ -52,4 +52,4 @@ public:
     bool IsEmpty() const noexcept { return fd_ == -1; }
 };
 
-#endif //HTTP_SERVER_STARTER_CPP_FILE_DESCRIPTOR_H
+#endif //HTTP_SERVER_FILE_DESCRIPTOR_H

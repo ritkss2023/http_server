@@ -1,5 +1,5 @@
-#ifndef HTTP_SERVER_STARTER_CPP_HTTP_H
-#define HTTP_SERVER_STARTER_CPP_HTTP_H
+#ifndef HTTP_SERVER_HTTP_H
+#define HTTP_SERVER_HTTP_H
 
 #include <string>
 #include <unordered_map>
@@ -33,4 +33,4 @@ struct HttpResponse {
 
 std::string ToString(const HttpResponse& response);
 
-#endif //HTTP_SERVER_STARTER_CPP_HTTP_H
+#endif //HTTP_SERVER_HTTP_H
